@@ -12,21 +12,13 @@ impl Query {
     ///
     /// # Errors
     /// This function fails if ...
-    async fn project(&self, _ctx: &Context<'_>, id: Uuid) -> Result<Project> {
-        Ok(Project { id })
-    }
-
-    /// Res
-    ///
-    /// # Errors
-    /// This function fails if ...
     #[graphql(entity)]
     async fn find_project_by_id(
         &self,
-        ctx: &Context<'_>,
+        _ctx: &Context<'_>,
         #[graphql(key)] id: Uuid,
     ) -> Result<Project> {
-        self.project(ctx, id).await
+        Ok(Project { id })
     }
 }
 

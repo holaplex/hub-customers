@@ -44,7 +44,7 @@ impl hub_core::producer::Message for proto::CustomerEvents {
 #[derive(Debug, clap::Args)]
 #[command(version, author, about)]
 pub struct Args {
-    #[arg(short, long, env, default_value_t = 3005)]
+    #[arg(short, long, env, default_value_t = 3006)]
     pub port: u16,
 
     #[command(flatten)]
