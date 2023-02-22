@@ -25,6 +25,7 @@ impl Query {
 #[derive(Clone, Debug, PartialEq, Eq, SimpleObject)]
 #[graphql(complex, concrete(name = "Project", params()))]
 pub struct Project {
+    #[graphql(external)]
     pub id: Uuid,
 }
 
