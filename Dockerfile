@@ -47,7 +47,7 @@ RUN apt-get update -y && \
 RUN mkdir -p bin
 
 FROM base AS hub-customers
-COPY --from=builder-hub-customers/app/target/release/holaplex-hub-customers bin
+COPY --from=builder-hub-customers /app/target/release/holaplex-hub-customers bin
 CMD ["bin/holaplex-hub-customers"]
 
 FROM base AS migrator
