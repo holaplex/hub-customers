@@ -11,7 +11,7 @@ use poem::{get, listener::TcpListener, middleware::AddData, post, EndpointExt, R
 
 pub fn main() {
     let opts = hub_core::StartConfig {
-        service_name: "hub-drops",
+        service_name: "hub-customers",
     };
 
     hub_core::run(opts, |common, args| {

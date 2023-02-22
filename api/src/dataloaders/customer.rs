@@ -62,6 +62,6 @@ impl DataLoader<Uuid> for Loader {
             .all(self.db.get())
             .await?;
 
-        Ok(customers.into_iter().map(|c| (c.id, c.into())).collect())
+        Ok(customers.into_iter().map(|c| (c.id, c)).collect())
     }
 }
