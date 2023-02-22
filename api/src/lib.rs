@@ -2,24 +2,49 @@
 #![warn(clippy::pedantic, clippy::cargo)]
 #![allow(clippy::module_name_repetitions)]
 
-pub mod graphql;
 pub mod db;
+pub mod entities;
 pub mod handlers;
 
-
 use db::Connection;
+pub mod dataloaders;
+pub mod mutations;
+pub mod queries;
+use async_graphql::{
+    dataloader::DataLoader,
+    extensions::{ApolloTracing, Logger},
+    EmptySubscription, Schema,
+};
 use hub_core::{
     anyhow::{Error, Result},
     clap,
     prelude::*,
+    producer::Producer,
+    tokio,
     uuid::Uuid,
 };
+use mutations::Mutation;
 use poem::{async_trait, FromRequest, Request, RequestBody};
+use queries::Query;
+
+use crate::dataloaders::CustomerLoader;
+
+pub type AppSchema = Schema<Query, Mutation, EmptySubscription>;
+
+pub mod proto {
+    include!(concat!(env!("OUT_DIR"), "/customer.proto.rs"));
+}
+
+use proto::CustomerEvents;
+
+impl hub_core::producer::Message for proto::CustomerEvents {
+    type Key = proto::CustomerEventKey;
+}
 
 #[derive(Debug, clap::Args)]
 #[command(version, author, about)]
 pub struct Args {
-    #[arg(short, long, env, default_value_t = 3002)]
+    #[arg(short, long, env, default_value_t = 3006)]
     pub port: u16,
 
     #[command(flatten)]
@@ -52,37 +77,24 @@ impl<'a> FromRequest<'a> for UserID {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct UserEmail(Option<String>);
-
-#[async_trait]
-impl<'a> FromRequest<'a> for UserEmail {
-    async fn from_request(req: &'a Request, _body: &mut RequestBody) -> poem::Result<Self> {
-        let id = req
-            .headers()
-            .get("X-USER-EMAIL")
-            .and_then(|value| value.to_str().ok())
-            .map(std::string::ToString::to_string);
-
-        Ok(Self(id))
-    }
-}
-
 #[derive(Clone)]
 pub struct AppState {
-    pub schema: graphql::schema::AppSchema,
+    pub schema: AppSchema,
     pub connection: Connection,
+    pub producer: Producer<CustomerEvents>,
 }
 
 impl AppState {
     #[must_use]
     pub fn new(
-        schema: graphql::schema::AppSchema,
+        schema: AppSchema,
         connection: Connection,
+        producer: Producer<CustomerEvents>,
     ) -> Self {
         Self {
             schema,
             connection,
+            producer,
         }
     }
 }
@@ -90,15 +102,28 @@ impl AppState {
 pub struct AppContext {
     pub db: Connection,
     pub user_id: Option<Uuid>,
-    pub user_email: Option<String>,
+    pub customers_loader: DataLoader<CustomerLoader>,
 }
 
 impl AppContext {
-    #[must_use] pub fn new(db: Connection, user_id: Option<Uuid>, user_email: Option<String>) -> Self {
+    #[must_use]
+    pub fn new(db: Connection, user_id: Option<Uuid>) -> Self {
+        let customers_loader = DataLoader::new(CustomerLoader::new(db.clone()), tokio::spawn);
+
         Self {
             db,
             user_id,
-            user_email,
+            customers_loader,
         }
     }
+}
+
+/// Builds the GraphQL Schema, attaching the Database to the context
+#[must_use]
+pub fn build_schema() -> AppSchema {
+    Schema::build(Query::default(), Mutation::default(), EmptySubscription)
+        .extension(ApolloTracing)
+        .extension(Logger)
+        .enable_federation()
+        .finish()
 }

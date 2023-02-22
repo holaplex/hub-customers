@@ -1,29 +1,17 @@
+//!
 
-
-use holaplex_rust_boilerplate_api::{
-    db::{Connection, DbArgs},
-    graphql::schema::build_schema,
-    handlers::{graphql_handler, playground},
-    AppState,
+use holaplex_hub_customers::{
+    build_schema,
+    db::Connection,
+    handlers::{graphql_handler, health, playground},
+    proto, AppState, Args,
 };
-use hub_core::{clap, prelude::*};
-use poem::{
-    get, listener::TcpListener, middleware::AddData, post, EndpointExt, Route, Server,
-};
-
-#[derive(Debug, clap::Args)]
-#[command(version, author, about)]
-pub struct Args {
-    #[arg(short, long, env, default_value_t = 3002)]
-    pub port: u16,
-
-    #[command(flatten)]
-    pub db: DbArgs,
-}
+use hub_core::anyhow::Context as AnyhowContext;
+use poem::{get, listener::TcpListener, middleware::AddData, post, EndpointExt, Route, Server};
 
 pub fn main() {
     let opts = hub_core::StartConfig {
-        service_name: "hub-boilerplate-rust",
+        service_name: "hub-customers",
     };
 
     hub_core::run(opts, |common, args| {
@@ -36,19 +24,19 @@ pub fn main() {
 
             let schema = build_schema();
 
-            let state = AppState::new(schema, connection);
+            let producer = common.producer_cfg.build::<proto::CustomerEvents>().await?;
+
+            let state = AppState::new(schema, connection, producer);
 
             Server::new(TcpListener::bind(format!("0.0.0.0:{port}")))
                 .run(
                     Route::new()
-                        .at(
-                            "/graphql",
-                            post(graphql_handler).with(AddData::new(state.clone())),
-                        )
-                        .at("/playground", get(playground)),
+                        .at("/graphql", post(graphql_handler).with(AddData::new(state)))
+                        .at("/playground", get(playground))
+                        .at("/health", get(health)),
                 )
                 .await
-                .map_err(Into::into)
+                .context("failed to build graphql server")
         })
     });
 }
