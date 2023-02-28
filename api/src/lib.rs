@@ -5,6 +5,7 @@
 pub mod db;
 pub mod entities;
 pub mod handlers;
+pub mod objects;
 
 use db::Connection;
 pub mod dataloaders;
