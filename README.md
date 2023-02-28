@@ -1,12 +1,11 @@
-# hub-rust-boilerplate
-Template rust service repository for the Holaplex Hub
+# Hub Customers
+Management of Holaplex Hub project customers.
 
-# Workspaces
+# Getting Started
+```
+docker compose up -d
+sea migrate up --database-url postgres://postgres:holaplex@localhost:5537/hub_customers
+cargo run --bin holaplex-hub-customers
+```
 
-```
-/api # API server
-/core # shared dependencies such as queries and mutations
-/entity # application database models and graphql objects
-/migration # database migrations
-/src # app entry point
-```
+Visit [http://localhost:3006/playground](http://localhost:3006/playground) to access GraphQL playground.
