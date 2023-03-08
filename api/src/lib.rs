@@ -28,7 +28,7 @@ use mutations::Mutation;
 use poem::{async_trait, FromRequest, Request, RequestBody};
 use queries::Query;
 
-use crate::dataloaders::CustomerLoader;
+use crate::dataloaders::{CustomerLoader, ProjectCustomersLoaders};
 
 pub type AppSchema = Schema<Query, Mutation, EmptySubscription>;
 
@@ -103,18 +103,22 @@ impl AppState {
 pub struct AppContext {
     pub db: Connection,
     pub user_id: Option<Uuid>,
-    pub customers_loader: DataLoader<CustomerLoader>,
+    pub customer_loader: DataLoader<CustomerLoader>,
+    pub project_customers_loader: DataLoader<ProjectCustomersLoaders>,
 }
 
 impl AppContext {
     #[must_use]
     pub fn new(db: Connection, user_id: Option<Uuid>) -> Self {
-        let customers_loader = DataLoader::new(CustomerLoader::new(db.clone()), tokio::spawn);
+        let customer_loader = DataLoader::new(CustomerLoader::new(db.clone()), tokio::spawn);
+        let project_customers_loader =
+            DataLoader::new(ProjectCustomersLoaders::new(db.clone()), tokio::spawn);
 
         Self {
             db,
             user_id,
-            customers_loader,
+            customer_loader,
+            project_customers_loader,
         }
     }
 }

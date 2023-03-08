@@ -24,14 +24,23 @@ impl Loader {
 #[async_trait]
 impl DataLoader<Uuid> for Loader {
     type Error = FieldError;
-    type Value = Customer;
+    type Value = Vec<Customer>;
 
     async fn load(&self, keys: &[Uuid]) -> Result<HashMap<Uuid, Self::Value>, Self::Error> {
         let customers = Entity::find()
-            .filter(Column::Id.is_in(keys.iter().map(ToOwned::to_owned)))
+            .filter(Column::ProjectId.is_in(keys.iter().map(ToOwned::to_owned)))
             .all(self.db.get())
             .await?;
 
-        Ok(customers.into_iter().map(|c| (c.id, c)).collect())
+        Ok(customers
+            .into_iter()
+            .fold(HashMap::new(), |mut acc, customer| {
+                acc.entry(customer.project_id).or_insert_with(Vec::new);
+
+                acc.entry(customer.project_id)
+                    .and_modify(|customers| customers.push(customer));
+
+                acc
+            }))
     }
 }
