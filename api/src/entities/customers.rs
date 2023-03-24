@@ -3,14 +3,19 @@
 use async_graphql::*;
 use sea_orm::entity::prelude::*;
 
+/// A customer record represents a user in your service and is used to group custodial wallets within a specific project. This allows for easy management of wallets and associated assets for a particular customer within your service.
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, SimpleObject)]
 #[sea_orm(table_name = "customers")]
 #[graphql(concrete(name = "Customer", params()))]
 pub struct Model {
+    /// The unique identifier for the customer record.
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
+    /// The ID of the project to which the customer record belongs.
     pub project_id: Uuid,
+    /// The datetime when the customer record was created.
     pub created_at: DateTime,
+    /// An optional datetime indicating the last time the customer record was updated. If the customer record has not been updated, this field will be `null`.
     pub updated_at: Option<DateTime>,
 }
 

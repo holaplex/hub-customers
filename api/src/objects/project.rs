@@ -12,6 +12,7 @@ pub struct Project {
 
 #[ComplexObject]
 impl Project {
+    /// Retrieve a customer record associated with the project, using its ID.
     async fn customer(&self, ctx: &Context<'_>, id: Uuid) -> Result<Option<Customer>> {
         let AppContext {
             customer_loader, ..
@@ -24,6 +25,7 @@ impl Project {
         }
     }
 
+    /// Retrieve all customer records associated with a given project.
     async fn customers(&self, ctx: &Context<'_>) -> Result<Option<Vec<Customer>>> {
         let AppContext {
             project_customers_loader,

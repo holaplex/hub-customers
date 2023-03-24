@@ -14,10 +14,7 @@ pub struct Mutation;
 
 #[Object(name = "CustomerMutation")]
 impl Mutation {
-    /// Res
-    ///
-    /// # Errors
-    /// This function fails if ...
+    /// This mutation creates a customer record and a corresponding treasury that holds custodial wallets on behalf of a user. The treasury serves as a way to group the customer's wallets together. This makes it easier to manage wallets and associated assets for the user within a specific project. The customer and treasury are associated with the specified project ID. The response includes the newly created customer record. If there is an error connecting to the database or unable to emit a customer created event, the mutation will fail and an error will be returned.
     pub async fn create_customer(
         &self,
         ctx: &Context<'_>,
@@ -49,12 +46,16 @@ impl Mutation {
     }
 }
 
+/// This input object is used for creating a customer and associated treasury for holding custodial wallets on behalf of the user.
 #[derive(Debug, Clone, InputObject)]
 pub struct CreateCustomerInput {
+    /// The unique identifier of the project to which the customer is associated.
     project: Uuid,
 }
 
+/// This response represents the payload returned after successfully creating a new `customer` record. It contains a single field customer which is a `Customer` object representing the newly created customer record.
 #[derive(Debug, Clone, SimpleObject)]
 pub struct CreateCustomerPayload {
+    /// The customer record created by the create customer mutation.
     customer: Customer,
 }
