@@ -1,6 +1,18 @@
 name: Cargo
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+      - release
+  pull_request:
+    branches:
+      - "**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
 
   clippy:
@@ -27,8 +39,11 @@ jobs:
             override: true
             components: rustfmt, clippy
 
-      - uses: actions/cache@v3
+      - uses: tespkg/actions-cache@v1
         with:
+          accessKey: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secretKey: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          bucket: ${{ vars.AWS_BUCKET }}
           path: |
             ~/.cargo/bin/
             ~/.cargo/registry/index/
@@ -36,11 +51,12 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock', 'rust-toolchain.toml') }}-v1
+
       - name: cargo clippy
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --workspace --all-features 
+          args: --workspace --all-features
 
       - name: cargo check
         uses: actions-rs/cargo@v1
