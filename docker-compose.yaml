@@ -7,7 +7,7 @@ services:
       - .env
     ports:
       - 5537:5432
-    volumes: 
+    volumes:
       - holaplex_hub_customers:/var/lib/postgresql/data
   redpanda:
     image: docker.redpanda.com/vectorized/redpanda:v22.3.6
